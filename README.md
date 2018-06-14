@@ -4,6 +4,8 @@ Classes that demonstrate how to use Sturm's Theroem for root finding to solve th
 For a detailed description see this blog entry:
 https://computingandrecording.wordpress.com/2017/03/20/closest-point-to-a-cubic-spline/
 
+![alt text](/Images/bezierSPL.jpg)
+
 Here is an example usage:
 
 std::vector<WorldSpace> control_points;
