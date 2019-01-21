@@ -7,7 +7,7 @@
 #include <xmmintrin.h>
 #include <smmintrin.h>
 
-#define USE_SIMD_OPTIMIZATION
+//#define USE_SIMD_OPTIMIZATION
 
 namespace CubicSplineTest
 {
@@ -276,6 +276,7 @@ namespace CubicSplineTest
             index += poly + 2;
 
             // long polynomial division
+            // The quotient coefficients represent the first degree polynomial from dividing p1 by p2.
             const double quotient_coefficeint1 = (double)p2[0] / p1[0];
             const double quotient_coefficeint2 = (p2[1] - quotient_coefficeint1 * p1[1]) / p1[0];
             for (int c = 0; c <= poly; ++c, ++element)
