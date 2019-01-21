@@ -270,25 +270,76 @@ namespace CubicSplineTest
         double* element = &sturm_polys[6 + 5]; // start of third polynomial
         for (int i = 2; i <= degree; ++i)
         {
-            const int poly = degree - i;
+            const int dest_poly_degree = degree - i;
             const double* p1 = &sturm_polys[index];
-            const double* p2 = &sturm_polys[index - (poly + 3)];
-            index += poly + 2;
+            const double* p2 = &sturm_polys[index - (dest_poly_degree + 3)];
+            index += dest_poly_degree + 2;
 
             // long polynomial division
-            // The quotient coefficients represent the first degree polynomial from dividing p1 by p2.
-            const double quotient_coefficeint1 = (double)p2[0] / p1[0];
-            const double quotient_coefficeint2 = (p2[1] - quotient_coefficeint1 * p1[1]) / p1[0];
-            for (int c = 0; c <= poly; ++c, ++element)
+            // For the expected case that the leading coefficient of denominator, p1, is non-zero and the
+            // numerator, p2, is one degree higher than p1, compute the quotient Ax + B and solve for the
+            // remainder in one pass.
+            if (p1[0] != 0.0)
             {
-                double remainder_coefficient = quotient_coefficeint2 * p1[c + 1] - p2[c + 2];
-                if (c != poly)
+                // The quotient coefficients represent the first degree polynomial from dividing p1 by p2.
+                const double quotient_coefficeint1 = p2[0] / p1[0];
+                const double quotient_coefficeint2 = (p2[1] - quotient_coefficeint1 * p1[1]) / p1[0];
+                for (int c = 0; c <= dest_poly_degree; ++c, ++element)
                 {
-                    remainder_coefficient += quotient_coefficeint1 * p1[c + 2];
-                }
+                    double remainder_coefficient = quotient_coefficeint2 * p1[c + 1] - p2[c + 2];
+                    if (c != dest_poly_degree)
+                    {
+                        remainder_coefficient += quotient_coefficeint1 * p1[c + 2];
+                    }
 
-                *element = remainder_coefficient;
+                    *element = remainder_coefficient;
+                }
             }
+            // Begin Fix #1
+            // This code has been added to address an issue with 0s while computing the remainder.
+            // This section has not been optimized, profiled, or tested thoroughly.
+            // See for more details: https://github.com/nrtaylor/CubicSplineClosestPoint/issues/1.
+            // Perform long polynomial division in the same way as if you were using a tabular method
+            // by hand. Only the last row of division has to be saved at each step.
+            else
+            {
+                int quotient_degree = 1;
+                int denominator_degree = dest_poly_degree + 1;
+                const int numerator_degree = dest_poly_degree + 2;
+                while (quotient_degree < numerator_degree && p1[0] == 0.0) {
+                    *element = 0.0;
+                    ++element;
+                    ++p1;
+                    --denominator_degree;
+                    ++quotient_degree;
+                }
+                if (quotient_degree >= numerator_degree)
+                {
+                    // Copy p1 into element so Sturm sequence does not count extra
+                    // sign change.
+                    *(element - 1) = p1[0];
+                    continue;
+                }
+                std::array<double, degree> division_result;
+                for (int j = 0; j <= numerator_degree; ++j)
+                {
+                    division_result[j] = p2[j];
+                }
+                for (int shift = 0; shift <= quotient_degree; ++shift)
+                {
+                    const double factor = division_result[shift] / p1[0];
+                    for (int k = 0; k <= denominator_degree; ++k)
+                    {
+                        division_result[k + shift] = division_result[k + shift] - p1[k] * factor;
+                    }
+                }
+                // Copy remainder into Sturm sequence.
+                for (int m = quotient_degree + 1; m <= numerator_degree; ++m, ++element)
+                {
+                    *element = -division_result[m];
+                }
+            }
+            // End Fix #1
         }
 
         for (int i = 0; i < ArithmeticSum(degree + 1); ++i)
