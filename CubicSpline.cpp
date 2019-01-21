@@ -7,7 +7,7 @@
 #include <xmmintrin.h>
 #include <smmintrin.h>
 
-//#define USE_SIMD_OPTIMIZATION
+#define USE_SIMD_OPTIMIZATION
 
 namespace CubicSplineTest
 {
@@ -276,17 +276,17 @@ namespace CubicSplineTest
             index += poly + 2;
 
             // long polynomial division
-            const double remainder_coefficeint = (double)p2[0] / p1[0];
-            const double remainder_sum = (p2[1] - remainder_coefficeint * p1[1]) / p1[0];
+            const double quotient_coefficeint1 = (double)p2[0] / p1[0];
+            const double quotient_coefficeint2 = (p2[1] - quotient_coefficeint1 * p1[1]) / p1[0];
             for (int c = 0; c <= poly; ++c, ++element)
             {
-                double coefficient = remainder_sum * p1[c + 1] - p2[c + 2];
+                double remainder_coefficient = quotient_coefficeint2 * p1[c + 1] - p2[c + 2];
                 if (c != poly)
                 {
-                    coefficient += remainder_coefficeint * p1[c + 2];
+                    remainder_coefficient += quotient_coefficeint1 * p1[c + 2];
                 }
 
-                *element = coefficient;
+                *element = remainder_coefficient;
             }
         }
 
